@@ -1,0 +1,12 @@
+name: WorkerMap
+title: WorkerMap
+username:
+account: ilabour
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3450046
+bundleId: 4619542
+url: https://ilabour.shinyapps.io/WorkerMap/
+when: 1621502334.8025
+asMultiple: FALSE
+asStatic: FALSE

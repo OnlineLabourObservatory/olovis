@@ -1,0 +1,12 @@
+name: OLI-Map
+title: OLI-Map
+username:
+account: ilabour
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2608749
+bundleId: 3537926
+url: https://ilabour.shinyapps.io/OLI-Map/
+when: 1597933321.98371
+asMultiple: FALSE
+asStatic: FALSE

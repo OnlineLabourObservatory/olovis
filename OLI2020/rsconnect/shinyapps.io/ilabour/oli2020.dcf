@@ -1,0 +1,12 @@
+name: oli2020
+title: oli2020
+username:
+account: ilabour
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2710276
+bundleId: 4619523
+url: https://ilabour.shinyapps.io/oli2020/
+when: 1621501773.20804
+asMultiple: FALSE
+asStatic: FALSE
