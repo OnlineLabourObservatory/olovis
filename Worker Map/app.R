@@ -174,7 +174,8 @@ deposit_details <- unlist(deposit_details$files)
 deposit_details <- data.frame(split(deposit_details, names(deposit_details)), stringsAsFactors = F)
 
 # Import worker supply data
-worker_data <- read_csv(deposit_details[grepl("worker_countrydata_",deposit_details$name),"download_url"])
+worker_data <- read_csv(deposit_details[grepl("worker_countrydata_",deposit_details$name),"download_url"][1])
+#worker_data <- read_csv("worker_countrydata_2021-06-02.txt")
 worker_data$timestamp <- as.Date(worker_data$timestamp)
 worker_data$date <- as.Date(as.character(worker_data$timestamp), format = "%Y-%m-%d")
 # Rename label
@@ -206,7 +207,7 @@ World$country[World$country == 'Syria'] <- 'Syrian Arab Republic'
 #%#%#%#%#%#%#%#%#%#%#%#%%#%#%#%
 load("worker_gender.rda")
 pph_sample <- read_excel("210224_pph_India_sample.xlsx")
-pph_sample <- pph_sample %>% group_by(country, Occupation, gender) %>% summarise(n = n())
+pph_sample <- pph_sample %>% group_by(country, Occupation, gender) %>% dplyr::summarise(n = n())
 
 df_gender <- left_join(df_gender,pph_sample)
 df_gender <- df_gender %>% rowwise() %>% mutate(count = sum(count, n, na.rm = TRUE))
@@ -222,7 +223,7 @@ server <- function(input, output) {
       group_by(country, occupation) %>% dplyr::summarise(count = sum(num_workers)) %>% group_by(country) %>% 
       mutate(sum = sum(count)) %>% mutate(share = round(count/sum,2)) 
     
-    df <- df %>% group_by(country) %>% top_n(1, share) 
+    df <- df %>% filter(count > 10) %>% group_by(country) %>% top_n(1, share) 
   })
   
   worker_share_select <- reactive({
@@ -234,7 +235,7 @@ server <- function(input, output) {
       df <- df %>% filter(occupation %in% input$occ_select)
     }
     
-    df <- df %>% group_by(country) %>% dplyr::summarise(count = sum(count,na.rm = T)) 
+    df <- df %>% group_by(country) %>% dplyr::summarise(count = sum(count,na.rm = T)) %>% filter(count > 10)
     df <- as.data.frame(df) %>% mutate(share = round(count/sum(count)*100,2))
   })
 
@@ -291,7 +292,7 @@ server <- function(input, output) {
     
     ## Create map
     tm <- tm_shape(df) + 
-      tm_polygons("share", breaks = c(0, 0.1, 0.2, 0.5, 1, 5, 10, 20, 50, Inf), title = "Global Share (%)", palette="Blues",
+      tm_polygons("share", breaks = c(0.001, 0.01, 0.1, 0.2, 0.5, 1, 5, 10, 20, 50, Inf), title = "Global Share (%)", palette="-viridis",
                   popup.vars=c("Country: " = "country",
                                "Occupation: " = "occupation",
                                "Online freelance workforce (%): " = "share")) +
@@ -303,26 +304,17 @@ server <- function(input, output) {
   output$worker_bar = renderLeaflet({
     
     df <- worker_share_select()
-    
-    df$share_bin <- ifelse(df$share <= 0.1, "1",
-                           ifelse(df$share <= 0.2, "2", 
-                                  ifelse(df$share <= 0.5, "3",
-                                         ifelse(df$share <= 1, "4",
-                                                ifelse(df$share <= 5, "5",
-                                                       ifelse(df$share <= 10, "6",
-                                                              ifelse(df$share <= 20, "7", 
-                                                                     ifelse(df$share <= 50, "8","9"))))))))
-    
+
     worker_bar <- df %>% top_n(15, share) %>% 
-      ggplot(aes(y=share, x=reorder(country, share), fill = share_bin,
-                 text=sprintf("Occupation: %s<br>%s percent of online freelance workforce", input$occ_select, round(share,1)))) +
-      geom_bar(position="stack", stat="identity", colour="black") +
+      ggplot() +
+      geom_bar(aes(y=share, x=reorder(country, share), fill = log(share),
+                   text=sprintf("Occupation: %s<br>%s percent of online freelance workforce", input$occ_select, round(share,1))),
+               position="stack", stat="identity", colour="black") +
       labs(x = "", y = "Top 15 Countries", colour = "", fill = "") + coord_flip() +
       theme_bw() + theme(text = element_text(size = 12), legend.position = "bottom", panel.grid.minor = element_blank(),
-                         panel.grid.major.x = element_blank()) + scale_fill_brewer(palette="Blues")
+                         panel.grid.major.x = element_blank()) + scale_fill_viridis_c(direction = -1, begin = 0.2, end = 0.6)
     # Turn it into plotly
-    ggplotly(worker_bar, tooltip="text") %>% 
-      layout(showlegend = FALSE)
+    ggplotly(worker_bar, tooltip="text") %>% hide_colorbar() %>% layout(showlegend = FALSE)
     
   })
   
@@ -344,9 +336,7 @@ server <- function(input, output) {
 
     
   })
-  
-
-  
+ 
   #%#%#%#%#%#%#%#%#%#%#%#%
   # Download functions
   #%#%#%#%#%#%#%#%#%#%#%#%
@@ -384,9 +374,6 @@ server <- function(input, output) {
     }
   )
 
-  
-  
-  
 }
 
 shinyApp(ui = ui, server = server)
