@@ -2,7 +2,7 @@
 # Create New OLI (11) Dashboard
 # Fabian Stephany | fabian.stephany@oii.ox.ac.uk
 # iLabour Group | ilabour.ox.ac.uk
-# Created: 14.05.2020
+# Created: 14.05.2020 | Last edit: 13.4.2022
 # Example layout: https://shiny.rstudio.com/gallery/navbar-example.html
 # Plotly Toolbar: https://plotly-r.com/control-modebar.html
 ##########################################################################
@@ -22,7 +22,7 @@ library(zoo)
 library(lubridate)
 library(htmlwidgets)
 library(leaflet)
-library(raster)
+#library(raster)
 library(rsconnect)
 library("rfigshare")
 library("viridis")  
@@ -65,147 +65,134 @@ domain_list <- c("English", "Spanish", "Russian")
 # Define User Interface
 ui = fluidPage(
   navbarPage("Online Labour Index 2020",
-    tabPanel("OLI 2020", fluid = TRUE,
-             sidebarLayout(
-               mainPanel(br(),
-                         br(),
-                         br(),
-                         plotlyOutput("oli_plotly"),
-                         "Source: OLI 2020 | onlinelabourobservatory.org"),
-               sidebarPanel(radioButtons("version", "Version",
-                                         list("OLI 2020" = 1, "OLI 5" = 2), selected = 1),
-                 dateRangeInput("dates", "Customise date range", start = "2016-06-01", end = Sys.Date()),
-                            downloadButton("download_oli_data", "Download Data"))
-               )
+             tabPanel("OLI 2020", fluid = TRUE,
+                      sidebarLayout(
+                        mainPanel(br(),
+                                  br(),
+                                  br(),
+                                  plotlyOutput("oli_plotly"),
+                                  "Source: OLI 2020 | onlinelabourobservatory.org"),
+                        sidebarPanel(radioButtons("version", "Version",
+                                                  list("OLI 2020" = 1, "OLI 5" = 2), selected = 1),
+                                     dateRangeInput("dates", "Customise date range", start = "2016-06-01", end = Sys.Date()),
+                                     downloadButton("download_oli_data", "Download Data"))
+                      )
              ),
-    tabPanel("By platform language", Fluid = TRUE,
-             #tabsetPanel(type = "tabs",
-                       #  tabPanel("By platform language", fluid = TRUE,
-                                 # sidebarLayout(
-                                  #  mainPanel(plotlyOutput("domain_bar"),
-                                   # "Source: OLI 2020 | onlinelabourobservatory.org"),
-                                  #  sidebarPanel(
-                                    #radioButtons("norm", "Normalise time series values",
-                                                              #list("Global market share" = 1, "Indexed values" = 2), selected = 2),
-                                                 #dateRangeInput("dates2", "Customise date range", start = "2020-09-01", end = Sys.Date()),
-                                                 #sliderInput("dates2", label = "", min = 2017, max = 2021, value = c(2017,2021), sep = ""),
-                                                # selectizeInput('domain', 'Select domain', 
-                                                #                choices = domain_list, 
-                                                #                selected = c("English", "Spanish", "Russian"), multiple = TRUE),
-                                                # downloadButton("download_domain_data", "Download Data"))
-                                  #)
-                         #),
-                         #tabPanel("By platform language and occupation", fluid = TRUE,
-                                  sidebarLayout(
-                                    mainPanel(br(),
-                                              br(),
-                                              br(),
-                                              plotlyOutput("domain_occ_bar"),
-                                              "Source: OLI 2020 | onlinelabourobservatory.org"),
-                                    sidebarPanel(radioButtons("slice", "Define market",
-                                                                          list("Within language share" = 1, "Global market share" = 2), selected = 1),
-                                                 selectizeInput('domain2', 'Select platform language', 
-                                                                choices = domain_list, 
-                                                                selected = c("English", "Spanish", "Russian"), multiple = TRUE),
-                                                 selectizeInput('occupation2', 'Select occupation', 
-                                                                choices = c("Clerical and data entry","Creative and multimedia","Professional services",
-                                                                            "Sales and marketing support","Software dev. and tech.",
-                                                                            "Writing and translation"), 
-                                                                selected = c("Clerical and data entry","Creative and multimedia","Professional services",
-                                                                             "Sales and marketing support","Software dev. and tech.",
-                                                                             "Writing and translation"), multiple = TRUE),
-                                                 downloadButton("download_lng_occ_data", "Download Data"))
-                                  )
-                         #)
-                       #)
+             
+             tabPanel("By platform language", fluid = TRUE,
+                      sidebarLayout(
+                        mainPanel(
+                                                       br(),
+                                                       br(),
+                                                       br(),
+                                                       plotlyOutput("domain_occ_bar"),
+                                  "Source: OLI 2020 | onlinelabourobservatory.org"),
+                        sidebarPanel(radioButtons("slice", "Define market",
+                                                  list("Within language share" = 1, "Global market share" = 2), selected = 1),
+                                     selectizeInput('domain2', 'Select platform language', 
+                                                    choices = domain_list, 
+                                                    selected = c("English", "Spanish", "Russian"), multiple = TRUE),
+                                     selectizeInput('occupation2', 'Select occupation', 
+                                                    choices = c("Clerical and data entry","Creative and multimedia","Professional services",
+                                                                "Sales and marketing support","Software dev. and tech.",
+                                                                "Writing and translation"), 
+                                                    selected = c("Clerical and data entry","Creative and multimedia","Professional services",
+                                                                 "Sales and marketing support","Software dev. and tech.",
+                                                                 "Writing and translation"), multiple = TRUE),
+                          downloadButton("download_domain_data", "Download Data"))
+                      )
              ),
-    tabPanel("By occupation", fluid = TRUE,
-             sidebarLayout(
-               mainPanel(tabsetPanel(type = "tabs",
-                                     tabPanel("Bar chart", 
-                                              br(),
-                                              br(),
-                                              br(),
-                                              plotlyOutput("occupation_bar")),
-                                     tabPanel("Time series",
-                                              fluidRow(column(3,
-                                                radioButtons("norm1", "",
-                                                               list("Global market share" = 1, "Indexed values" = 2), selected = 1)),
-                                                column(3,
-                                                       sliderInput("dates3", label = "", min = 2017, max = 2021, value = c(2017,2021), sep = ""))
-                                              ),
-                                              plotlyOutput("occupation_ts"))),
-                         "Source: OLI 2020 | onlinelabourobservatory.org"),
-               sidebarPanel(#radioButtons("slice", "Define market",
-                             #            list("Within language share" = 1, "Global market share" = 2), selected = 1),
-                            #dateRangeInput("dates3", "Customise date range", start = "2016-08-16", end = Sys.Date()),
-                            selectizeInput('occupation', 'Select occupation', 
-                                           choices = c("Clerical and data entry","Creative and multimedia","Professional services",
-                                                       "Sales and marketing support","Software dev. and tech.",
-                                                       "Writing and translation"), 
-                                           selected = c("Clerical and data entry","Creative and multimedia","Professional services",
-                                                        "Sales and marketing support","Software dev. and tech.",
-                                                        "Writing and translation"), multiple = TRUE),
-                            downloadButton("download_occupation_data", "Download Data"))
+             
+             tabPanel("By occupation", fluid = TRUE,
+                      sidebarLayout(
+                        mainPanel(tabsetPanel(type = "tabs",
+                                              tabPanel("Bar chart", 
+                                                       br(),
+                                                       br(),
+                                                       br(),
+                                                       plotlyOutput("occupation_bar")),
+                                              tabPanel("Time series",
+                                                       fluidRow(column(3,
+                                                                       radioButtons("norm1", "",
+                                                                                    list("Global market share" = 1, "Indexed values" = 2), selected = 1)),
+                                                                column(3,
+                                                                       sliderInput("dates3", label = "", min = 2017, max = 2022, value = c(2017,2022), sep = ""))
+                                                       ),
+                                                       plotlyOutput("occupation_ts"))),
+                                  "Source: OLI 2020 | onlinelabourobservatory.org"),
+                        sidebarPanel(#radioButtons("slice", "Define market",
+                          #            list("Within language share" = 1, "Global market share" = 2), selected = 1),
+                          #dateRangeInput("dates3", "Customise date range", start = "2016-08-16", end = Sys.Date()),
+                          selectizeInput('occupation', 'Select occupation', 
+                                         choices = c("Clerical and data entry","Creative and multimedia","Professional services",
+                                                     "Sales and marketing support","Software dev. and tech.",
+                                                     "Writing and translation"), 
+                                         selected = c("Clerical and data entry","Creative and multimedia","Professional services",
+                                                      "Sales and marketing support","Software dev. and tech.",
+                                                      "Writing and translation"), multiple = TRUE),
+                          downloadButton("download_occupation_data", "Download Data"))
+                      )
+             ),
+             
+             tabPanel("By country", fluid = TRUE,
+                      sidebarLayout(
+                        mainPanel(tabsetPanel(type = "tabs",
+                                              tabPanel("Bar chart", 
+                                                       br(),
+                                                       br(),
+                                                       br(),
+                                                       plotlyOutput("country_bar")),
+                                              tabPanel("Time series",
+                                                       fluidRow(column(3,
+                                                                       radioButtons("norm2", "",
+                                                                                    list("Global market share" = 1, "Indexed values" = 2), selected = 1)),
+                                                                column(3,
+                                                                       sliderInput("dates4", label = "", min = 2017, max = 2022, value = c(2017,2022), sep = ""))
+                                                       ),
+                                                       plotlyOutput("country_ts"))
+                        ),
+                        "Source: OLI 2020 | onlinelabourobservatory.org"),
+                        sidebarPanel(selectizeInput('country', 'Select country', 
+                                                    choices = country_list, 
+                                                    selected = c("United States", "United Kingdom", "India", "Canada", "Australia", "Germany"), multiple = TRUE),
+                                     downloadButton("download_country_data", "Download Data"),
+                                     downloadButton("download_world_data", "Download OLI World"))
+                      )
+             ),
+             
+             tabPanel("By countries and occupations", fluid = TRUE,
+                      sidebarLayout(
+                        mainPanel(br(),
+                                  br(),
+                                  br(),
+                                  plotlyOutput("cty_occ_plotly"),
+                                  "Source: OLI 2020 | onlinelabourobservatory.org"),
+                        sidebarPanel(radioButtons("slice2", "Define market",
+                                                  list("Within country share" = 1, "Global market share" = 2), selected = 1),
+                                     selectizeInput('country2', 'Select country', 
+                                                    choices = country_list, 
+                                                    selected = c("United States", "United Kingdom", "India", "Canada", "Australia", "Germany"), multiple = TRUE),
+                                     selectizeInput('occupation3', 'Select occupation', 
+                                                    choices = c("Clerical and data entry","Creative and multimedia","Professional services",
+                                                                "Sales and marketing support","Software dev. and tech.",
+                                                                "Writing and translation"), 
+                                                    selected = c("Clerical and data entry","Creative and multimedia","Professional services",
+                                                                 "Sales and marketing support","Software dev. and tech.",
+                                                                 "Writing and translation"), multiple = TRUE),
+                                     downloadButton("download_cty_occ_data", "Download Data"))
+                      )
+             ),
+             
+             tabPanel(
+               HTML(
+                 '<span class="glyphicon glyphicon-info-sign" aria-hidden="true""></span>'
+               ),
+               fluidPage(wellPanel(includeMarkdown(
+                 knitr::knit("app_description.Rmd")
+               )))
              )
-    ),
-    tabPanel("By country", fluid = TRUE,
-             sidebarLayout(
-               mainPanel(tabsetPanel(type = "tabs",
-                                     tabPanel("Bar chart", 
-                                              br(),
-                                              br(),
-                                              br(),
-                                              plotlyOutput("country_bar")),
-                                     tabPanel("Time series",
-                                              fluidRow(column(3,
-                                                radioButtons("norm2", "",
-                                                                    list("Global market share" = 1, "Indexed values" = 2), selected = 1)),
-                                                column(3,
-                                                       sliderInput("dates4", label = "", min = 2017, max = 2021, value = c(2017,2021), sep = ""))
-                                              ),
-                                              plotlyOutput("country_ts"))
-                                     ),
-                         "Source: OLI 2020 | onlinelabourobservatory.org"),
-               sidebarPanel(selectizeInput('country', 'Select country', 
-                                           choices = country_list, 
-                                           selected = c("United States", "United Kingdom", "India", "Canada", "Australia", "Germany"), multiple = TRUE),
-                            downloadButton("download_country_data", "Download Data"),
-                            downloadButton("download_world_data", "Download OLI World"))
-             )
-    ),
-    tabPanel("By countries and occupations", fluid = TRUE,
-             sidebarLayout(
-               mainPanel(br(),
-                         br(),
-                         br(),
-                         plotlyOutput("cty_occ_plotly"),
-                         "Source: OLI 2020 | onlinelabourobservatory.org"),
-               sidebarPanel(radioButtons("slice2", "Define market",
-                                         list("Within country share" = 1, "Global market share" = 2), selected = 1),
-                            selectizeInput('country2', 'Select country', 
-                                           choices = country_list, 
-                                           selected = c("United States", "United Kingdom", "India", "Canada", "Australia", "Germany"), multiple = TRUE),
-                            selectizeInput('occupation3', 'Select occupation', 
-                                           choices = c("Clerical and data entry","Creative and multimedia","Professional services",
-                                                       "Sales and marketing support","Software dev. and tech.",
-                                                       "Writing and translation"), 
-                                           selected = c("Clerical and data entry","Creative and multimedia","Professional services",
-                                                        "Sales and marketing support","Software dev. and tech.",
-                                                        "Writing and translation"), multiple = TRUE),
-                            downloadButton("download_cty_occ_data", "Download Data"))
-             )
-    ),
-    tabPanel(
-      HTML(
-        '<span class="glyphicon glyphicon-info-sign" aria-hidden="true""></span>'
-      ),
-      fluidPage(wellPanel(includeMarkdown(
-        knitr::knit("app_description.Rmd")
-      )))
-    )
-    )
   )
+)
 
 #%#%#%#%#%#%#%#%#%#%#%#%
 # Load Dashboard data
@@ -220,13 +207,13 @@ deposit_details <- data.frame(split(deposit_details, names(deposit_details)), st
 ## Access OLI data
 ### Traditional five ENGLISH platforms
 oli_import <- read_csv(deposit_details[grepl("OLIdata_",deposit_details$name),"download_url"][1])
-#oli_import <- read_csv("OLIdata_2021-08-16.txt.zip")
+#oli_import <- read_csv("OLIdata_2022-01-03.txt.zip")
 
 oli_import <- oli_import %>% filter(status == "new") %>% group_by(date) %>% dplyr::summarise(count = sum(count))
 oli_import$domain <- "OLI-5"
 ### New six ES/RU/PH platforms
 oli11_import <- read_csv(deposit_details[grepl("OLI11data_",deposit_details$name),"download_url"][1])
-#oli11_import <- read_csv("OLI11data_2021-08-16.txt.zip")
+#oli11_import <- read_csv("OLI11data_2022-01-03.txt.zip")
 names(oli11_import)[1] <- "date"
 oli11_import$date <- as.Date(oli11_import$date)
 oli11_import <- oli11_import %>% filter(date >= "2020-08-01", status == "new") %>% group_by(date) %>% dplyr::summarise(count = sum(count)) 
@@ -241,18 +228,24 @@ oli2020$count <- as.numeric(oli2020$count)
 ## Access Buyer Country Data
 ### Of traditional five platforms
 bcountry <- read_csv(deposit_details[grepl("bcountrydata_",deposit_details$name),"download_url"][1])
-#bcountry <- read_csv("bcountrydata_2021-08-04.txt.zip")
+#bcountry <- read_csv("bcountrydata_2022-01-03.txt.zip")
+#### Provide data on weekly basis ####
+bcountry$timestamp <- cut(bcountry$timestamp, breaks = "weeks")
+bcountry <- bcountry %>% group_by(timestamp, country_group, country, occupation) %>% summarise(count = sum(count))
 bcountry <- bcountry %>% dplyr::select(timestamp,country,count,occupation)
 bcountry$domain <- "en"
 ### Of new six platforms
 bcountry11 <- read_csv(deposit_details[grepl("OLI11_buyer_",deposit_details$name),"download_url"][1])
-#bcountry11 <- read_csv("OLI11_buyer_countrydata_2021-08-04.txt.zip")
-bcountry11 <- bcountry11 %>% filter(timestamp >= "2020-08-01")
-names(bcountry11)[3] <- "country"
+#bcountry11 <- read_csv("OLI11_buyer_countrydata_2022-01-03.txt.zip")
+bcountry11 <- bcountry11 %>% filter(timestamp >= "2021-03-01")
+#### Provide data on weekly basis ####
+bcountry11$timestamp <- cut(bcountry11$timestamp, breaks = "weeks")
+bcountry11 <- bcountry11 %>% group_by(timestamp, domain, buyer_country, occupation) %>% summarise(count = sum(count))
+bcountry11 <- bcountry11 %>% rename(country = buyer_country)
 ### Merge both DFs
 bcountry2020 <- rbind(bcountry,bcountry11)
 ### Format Bcountry DF
-names(bcountry2020)[1] <- "date"
+bcountry2020 <- bcountry2020 %>% rename(date = timestamp)
 bcountry2020$date <- as.Date(as.character(bcountry2020$date), format = "%Y-%m-%d")
 bcountry2020$count <- as.numeric(bcountry2020$count)
 ## Rename Occupation
@@ -269,21 +262,28 @@ bcountry2020$domain <- ifelse(bcountry2020$domain == "en", "English",
 # Calculate static data
 #%#%#%#%#%#%#%#%#%#%#%#%%#%#%#%
 # For OLI 2020
-## Use chain linking to avoid level swift when adding six new platforms to the OLI 5 in January 2021
-### Calculate Moving Average
+## Apply weights
+#oli2020$count_w <- ifelse(oli2020$domain=="OLI-5",oli2020$count,oli2020$count*0.18)
+#oli2020$count_w <- ifelse(oli2020$date < "2020-08-01" | oli2020$date > "2020-09-01",oli2020$count,oli2020$count_w)
+## Calculate Moving Average
 df_oli_old <- oli2020 %>% filter(domain=="OLI-5") %>% group_by(date) %>% dplyr::summarise(count_old = mean(count)) %>% 
   mutate(moving.average.old = rollmean(count_old, 28, fill = list(NA, NULL, NA), align = "right")) %>%
   mutate(moving.average.old = round(moving.average.old/moving.average.old[date=="2016-06-01"]*100,2)) 
 
-### Define a break point for the date of adding new platforms
 break_point <- df_oli_old$moving.average.old[df_oli_old$date=="2021-01-01"]
 
-### Adjust new ts after the break point
 df_oli_new <- oli2020 %>% group_by(date) %>% dplyr::summarise(count_new = mean(count)) %>% 
   mutate(moving.average.new = rollmean(count_new, 28, fill = list(NA, NULL, NA), align = "right")) %>%
   mutate(moving.average.new = round(moving.average.new/moving.average.new[date=="2021-01-01"]*break_point,2))
 
 df_oli <- left_join(df_oli_old,df_oli_new)
+
+# Domain
+df_domain <- bcountry2020 %>% group_by(date, domain) %>% dplyr::summarise(count = sum(count)) %>% 
+group_by(date) %>% mutate(total = sum(count)) %>% group_by(date, domain) %>% mutate(share = count/total) %>%
+group_by(domain) %>% mutate(moving.average=rollmean(share, 4, fill = list(NA, NULL, NA), align = "right"))
+# Regroup domains again
+df_domain <-  df_domain %>% ungroup(domain) %>% mutate(domain = factor(domain))
 
 # Domain and Occupations
 df_domain_occ <- bcountry2020 %>% group_by(domain, occupation) %>% dplyr::summarise(count = sum(count)) %>% 
@@ -295,7 +295,7 @@ df_domain_occ <-  df_domain_occ %>% ungroup(domain, occupation) %>% mutate(domai
 # Occupations
 df_occupation <- bcountry2020 %>% group_by(date, occupation) %>% dplyr::summarise(count = sum(count)) %>% 
   group_by(date) %>% mutate(total = sum(count)) %>% group_by(date, occupation) %>% mutate(share = count/total) %>%
-  group_by(occupation) %>% mutate(moving.average=rollmean(share, 28, fill = list(NA, NULL, NA), align = "right"))
+  group_by(occupation) %>% mutate(moving.average=rollmean(share, 4, fill = list(NA, NULL, NA), align = "right"))
 
 df_occupation <-  df_occupation %>% ungroup(occupation) %>% mutate(occupation = factor(occupation))
 
@@ -303,12 +303,12 @@ df_occupation <-  df_occupation %>% ungroup(occupation) %>% mutate(occupation = 
 ## Renormalise ts in August 2020 when new platforms are added
 df_country <- bcountry2020
 df_country <- df_country %>% group_by(date, country) %>% dplyr::summarise(count = sum(count)) 
-df_country <- df_country %>% group_by(country) %>% mutate(count_weight = count/count[date=="2020-08-01"][1L]*count[date=="2020-07-31"][1L])
-df_country$count <- ifelse(df_country$date >= "2020-08-01",(df_country$count_weight),df_country$count)
+df_country <- df_country %>% group_by(country) %>% mutate(count_weight = count/count[date=="2021-03-01"][1L]*count[date=="2021-02-22"][1L])
+df_country$count <- ifelse(df_country$date >= "2021-03-01",(df_country$count_weight),df_country$count)
 
 df_country <- df_country %>% 
   group_by(date) %>% mutate(total = sum(count, na.rm=TRUE)) %>% group_by(date, country) %>% mutate(share = count/total) %>%
-  group_by(country) %>% mutate(moving.average=rollmean(share, 28, na.pad=TRUE, align="right")) 
+  group_by(country) %>% mutate(moving.average=rollmean(share, 4, na.pad=TRUE, align="right")) 
 
 df_country <-  df_country %>% ungroup(country) %>% mutate(country = factor(country))
 
@@ -320,6 +320,13 @@ df_cty_occ <- df_cty_occ %>% mutate(share_market = count/sum(df_cty_occ$count))
 
 # Regroup occupations and countries again
 df_cty_occ <-  df_cty_occ %>% ungroup(country, occupation) %>% mutate(country = factor(country), occupation = factor(occupation))
+
+
+# domain and Countries
+#df_cty <- df_oli11 %>% filter(occupation != "Total") %>% group_by(domain, country) %>% summarise(count = sum(count)) %>% 
+#  group_by(domain) %>% mutate(share_group = count/sum(count)) 
+# Regroup occupations and countries again
+#df_cty <-  df_cty %>% ungroup(domain, country) %>% mutate(domain = factor(domain), country = factor(country))
 
 
 #%#%#%#%#%#%#%#%#%#%#%#%%#%#%#%
@@ -334,7 +341,7 @@ server <- function(input, output) {
     if (input$version == "1") {
       
       df_oli$moving.average <- ifelse(df_oli$date>="2021-01-01", df_oli$moving.average.new, df_oli$moving.average.old)
-    
+      
       df_oli <- df_oli %>% mutate(moving.average = df_oli$moving.average/df_oli$moving.average[df_oli$date == input$dates[1]]*100) 
       
     }
@@ -349,6 +356,7 @@ server <- function(input, output) {
     df_oli <- df_oli %>% filter(as.character(date) >= input$dates[1] & as.character(date) <= input$dates[2])
     
   })
+  
   
   # Make Country Occupation dataframe reactive
   domain_occ_select <- reactive({
@@ -369,6 +377,32 @@ server <- function(input, output) {
   })
   
   # Make Occupation dataframe reactive
+  #domain_select <- reactive({
+    
+ #   if (input$norm_domain == "1") {
+ #     df_domain <- df_domain
+ #   }
+ #   if (input$norm_domain == "2") {
+      
+      # Find new normalization date (on weekly basis)
+ #     norm_start <- as.character(cut(as.Date(paste(input$dates_domain[1],"-01-01",sep="")), breaks = "weeks"))
+  #    norm_end <- as.character(cut(as.Date(paste(input$dates_domain[1]+1,"-01-01",sep="")), breaks = "weeks"))
+     
+ #     df_domain <- df_domain %>%
+  #      group_by(domain) %>% 
+ #       mutate(moving.average = moving.average/moving.average[as.character(date) == norm_start][1L])
+ #     df_domain <-  df_domain %>% ungroup(domain) %>% mutate(domain = factor(domain))
+  #  }
+    
+  #  norm_start <- as.character(cut(as.Date(paste(input$dates_domain[1],"-01-01",sep="")), breaks = "weeks"))
+ #   norm_end <- as.character(cut(as.Date(paste(input$dates_domain[2]+1,"-01-01",sep="")), breaks = "weeks"))
+    
+ #   df_domain <- df_domain %>% filter(as.character(date) >= norm_start & as.character(date) <= norm_end & domain %in% input$domain2) 
+    
+ # })
+  
+  
+  # Make Occupation dataframe reactive
   occupation_select <- reactive({
     
     if (input$norm1 == "1") {
@@ -376,21 +410,29 @@ server <- function(input, output) {
     }
     if (input$norm1 == "2") {
       
+      # Find new normalization date (on weekly basis)
+      norm_start <- as.character(cut(as.Date(paste(input$dates3[1],"-01-01",sep="")), breaks = "weeks"))
+      norm_end <- as.character(cut(as.Date(paste(input$dates3[2]+1,"-01-01",sep="")), breaks = "weeks"))
+      
       df_occupation <- df_occupation %>%
-        group_by(occupation) %>% mutate(moving.average = moving.average/moving.average[as.character(date) == paste(input$dates3[1],"-01-01",sep="")][1L])
+        group_by(occupation) %>% 
+        mutate(moving.average = moving.average/moving.average[as.character(date) == norm_start][1L])
       df_occupation <-  df_occupation %>% ungroup(occupation) %>% mutate(occupation = factor(occupation))
     }
     
-    df_occupation <- df_occupation %>% filter(as.character(date) >= input$dates3[1] & as.character(date) <= input$dates3[2]+1 & occupation %in% input$occupation) 
+    norm_start <- as.character(cut(as.Date(paste(input$dates3[1],"-01-01",sep="")), breaks = "weeks"))
+    norm_end <- as.character(cut(as.Date(paste(input$dates3[2]+1,"-01-01",sep="")), breaks = "weeks"))
+    
+    df_occupation <- df_occupation %>% filter(as.character(date) >= norm_start & as.character(date) <= norm_end & occupation %in% input$occupation) 
     
   })
   
-  
-  world_select <- reactive({
-  
-    df_country <- df_country %>% filter(as.character(date) >= input$dates4[1] & as.character(date) <= input$dates4[2]+1) 
+
+ world_select <- reactive({
     
-  })
+    df_country
+    
+ })
   
   # Make Country dataframe reactive
   country_select <- reactive({
@@ -400,12 +442,19 @@ server <- function(input, output) {
     }
     if (input$norm2 == "2") {
       
+      # Find new normalization date (on weekly basis)
+      norm_start <- as.character(cut(as.Date(paste(input$dates4[1],"-01-01",sep="")), breaks = "weeks"))
+      norm_end <- as.character(cut(as.Date(paste(input$dates4[2]+1,"-01-01",sep="")), breaks = "weeks"))
+      
       df_country <- df_country %>% group_by(country) %>% 
-        mutate(moving.average = moving.average/moving.average[as.character(date) == paste(input$dates4[1],"-01-01",sep="")][1L])
+        mutate(moving.average = moving.average/moving.average[as.character(date) == norm_start][1L])
       df_country <-  df_country %>% ungroup(country) %>% mutate(country = factor(country))
     }
     
-    df_country <- df_country %>% filter(as.character(date) >= input$dates4[1] & as.character(date) <= input$dates4[2]+1 & country %in% input$country) 
+    norm_start <- as.character(cut(as.Date(paste(input$dates4[1],"-01-01",sep="")), breaks = "weeks"))
+    norm_end <- as.character(cut(as.Date(paste(input$dates4[2]+1,"-01-01",sep="")), breaks = "weeks"))
+    
+    df_country <- df_country %>% filter(as.character(date) >= norm_start & as.character(date) <= norm_end & country %in% input$country) 
     
   })
   
@@ -428,12 +477,12 @@ server <- function(input, output) {
   })
   
   
-#%#%#%#%#%#%#%#%#%#%#%#%#%#%#%#%#%#%#%#%#%#%#%#%  
-# Create Plots
-#%#%#%#%#%#%#%#%#%#%#%#%#%#%#%#%#%#%#%#%#%#%#%#%
+  #%#%#%#%#%#%#%#%#%#%#%#%#%#%#%#%#%#%#%#%#%#%#%#%  
+  # Create Plots
+  #%#%#%#%#%#%#%#%#%#%#%#%#%#%#%#%#%#%#%#%#%#%#%#%
   # Generate a online labour index plot of the data
   output$oli_plotly <- renderPlotly({
-
+    
     oli_plot <- oli_select() %>% 
       #df_oli %>%
       ggplot(aes(x = date, y = moving.average)) +
@@ -442,9 +491,9 @@ server <- function(input, output) {
       labs(x = "", y = paste("OLI 2020 | 100 = ", input$dates[1], sep=""), colour = "", fill = "") +
       theme_bw() + theme(text = element_text(size = 12), legend.position = "bottom", panel.grid.minor = element_blank(),
                          panel.grid.major.x = element_blank())
-  # Turn it into plotly
-  ggplotly(oli_plot, tooltip="text") %>% 
-    layout(showlegend = F)
+    # Turn it into plotly
+    ggplotly(oli_plot, tooltip="text") %>% 
+      layout(showlegend = F)
   })
   
   # Generate bar chart
@@ -465,12 +514,30 @@ server <- function(input, output) {
   })
   
   # Generate occupation time series
+  #output$domain_ts <- renderPlotly({
+    
+    #domain_ts <- domain_select() %>% 
+     # ggplot(aes(x = date, y = moving.average*100, group = domain)) + 
+      #geom_line(aes(color=domain, text=sprintf("%s<br>%s<br>Date: %s", round(moving.average*100,1), domain, date))) +
+     # labs(x = "", y = paste("Online Labour Index | Start: ",input$dates_domain[1]," Week 1", sep=""), colour = "", fill = "")+
+      #theme_bw() + theme(text = element_text(size = 12), legend.position = "bottom", panel.grid.minor = element_blank(),
+     #                    panel.grid.major.x = element_blank()) + scale_color_manual(values=cbPalette)
+    # Turn it into plotly
+   # ggplotly(domain_ts, tooltip="text") %>% 
+    #  layout(showlegend = T, 
+     #        legend=list(orientation="h", yanchor="bottom", y=-.3, xanchor="right", x=0.7, font=list(size=10))) %>%
+     # config(modeBarButtonsToRemove = c("zoomIn2d", "zoomOut2d"))
+    
+#  })
+  
+  
+  # Generate occupation time series
   output$occupation_ts <- renderPlotly({
     
     occupation_ts <- occupation_select() %>% 
       ggplot(aes(x = date, y = moving.average*100, group = occupation)) + 
       geom_line(aes(color=occupation, text=sprintf("%s<br>%s<br>Date: %s", round(moving.average*100,1), occupation, date))) +
-      labs(x = "", y = paste("Online Labour Index | Start: ",input$dates3[1],"-01", sep=""), colour = "", fill = "")+
+      labs(x = "", y = paste("Online Labour Index | Start: ",input$dates3[1]," Week 1", sep=""), colour = "", fill = "")+
       theme_bw() + theme(text = element_text(size = 12), legend.position = "bottom", panel.grid.minor = element_blank(),
                          panel.grid.major.x = element_blank()) + scale_color_manual(values=cbPalette)
     # Turn it into plotly
@@ -478,7 +545,7 @@ server <- function(input, output) {
       layout(showlegend = T, 
              legend=list(orientation="h", yanchor="bottom", y=-.3, xanchor="right", x=0.7, font=list(size=10))) %>%
       config(modeBarButtonsToRemove = c("zoomIn2d", "zoomOut2d"))
-      
+    
   })
   
   # Generate occupation bar chart
@@ -507,21 +574,21 @@ server <- function(input, output) {
         #df_country %>% filter(country %in% c("United States", "Russia", "Spain")) %>%
         ggplot(aes(x = date, y = moving.average*100, group = country)) + 
         geom_line(aes(color=country, text=sprintf("%s<br>Country: %s<br>Date: %s",round(moving.average*100,1), country, date))) +
-        labs(x = "", y = paste("Online Labour Index | Start: ",input$dates4[1],"-01", sep=""), colour = "", fill = "")+
+        labs(x = "", y = paste("Online Labour Index | Start: ",input$dates4[1], " Week 1", sep=""), colour = "", fill = "")+
         theme_bw() + theme(text = element_text(size = 12), legend.position = "bottom", panel.grid.minor = element_blank(),
                            panel.grid.major.x = element_blank()) + scale_color_manual(values = cbPalette)
     }
     
     if (length(unique(country_select()$country)) > 7) {
       
-    country_ts <- country_select() %>%
-      #df_country %>% filter(country %in% c("United States", "Russia", "Spain")) %>%
-      ggplot(aes(x = date, y = moving.average*100, group = country)) + 
-      geom_line(aes(color=country, text=sprintf("%s<br>Country: %s<br>Date: %s",round(moving.average*100,1), country, date))) +
-      labs(x = "", y = paste("Online Labour Index | Start: ",input$dates4[1],"-01", sep=""), colour = "", fill = "")+
-      theme_bw() + theme(text = element_text(size = 12), legend.position = "bottom", panel.grid.minor = element_blank(),
-                         panel.grid.major.x = element_blank()) 
-    
+      country_ts <- country_select() %>%
+        #df_country %>% filter(country %in% c("United States", "Russia", "Spain")) %>%
+        ggplot(aes(x = date, y = moving.average*100, group = country)) + 
+        geom_line(aes(color=country, text=sprintf("%s<br>Country: %s<br>Date: %s",round(moving.average*100,1), country, date))) +
+        labs(x = "", y = paste("Online Labour Index | Start: ",input$dates4[1], " Week 1", sep=""), colour = "", fill = "")+
+        theme_bw() + theme(text = element_text(size = 12), legend.position = "bottom", panel.grid.minor = element_blank(),
+                           panel.grid.major.x = element_blank()) 
+      
     }
     
     # Turn it into plotly
@@ -554,11 +621,11 @@ server <- function(input, output) {
       country_bar <- country_select() %>% 
         group_by(country) %>% dplyr::summarise(share = mean(share)) %>%
         ggplot(aes(fill=country, y=share*100, x=reorder(country, share), 
-                 text=sprintf("Country: %s<br>%s percent of demand", country, round(share*100,1)))) +
+                   text=sprintf("Country: %s<br>%s percent of demand", country, round(share*100,1)))) +
         geom_bar(position="stack", stat="identity") +
         labs(x = "", y = "", colour = "", fill = "") + coord_flip() +
         theme_bw() + theme(text = element_text(size = 12), legend.position = "bottom", panel.grid.minor = element_blank(),
-                         panel.grid.major.x = element_blank()) 
+                           panel.grid.major.x = element_blank()) 
       
     }
     
@@ -567,7 +634,7 @@ server <- function(input, output) {
       layout(showlegend = F)
     
   })
- 
+  
   # Generate bar chart
   output$cty_occ_plotly <- renderPlotly({
     
@@ -593,10 +660,10 @@ server <- function(input, output) {
   output$download_oli_data <- downloadHandler(
     
     filename = function() {
-      paste("oli_",input$dates[1],"_to_",input$dates[2],".csv", sep = "")
+      paste("oli2020_",input$dates[1],"_to_",input$dates[2],".csv", sep = "")
     },
     content = function(file) {
-      write.csv(oli_select(), file, row.names = FALSE, quote = FALSE)
+      write.csv(oli_select()[,c("date","moving.average")], file, row.names = FALSE, quote = FALSE)
     }
   )
   
@@ -604,21 +671,10 @@ server <- function(input, output) {
   output$download_domain_data <- downloadHandler(
     
     filename = function() {
-      paste("oli_domains_",input$dates2[1],"_to_",input$dates2[2],".csv", sep = "")
+      "oli2020_domain_occupation.csv"
     },
     content = function(file) {
-      write.csv(domain_select()[,c("date","domain","share","moving.average")], file, row.names = FALSE, quote = FALSE)
-    }
-  )
-  
-  # Downloadable csv of selected dataset
-  output$download_bar_data <- downloadHandler(
-    
-    filename = function() {
-      paste("oli_bars_selected.csv", sep = "")
-    },
-    content = function(file) {
-      write.csv(cty_occ_select()[,c("domain","occupation","share")], file, row.names = FALSE, quote = FALSE)
+      write.csv(domain_occ_select()[,c("domain","occupation","share")], file, row.names = FALSE, quote = FALSE)
     }
   )
   
@@ -626,10 +682,10 @@ server <- function(input, output) {
   output$download_occupation_data <- downloadHandler(
     
     filename = function() {
-      paste("oli_occupations_",input$dates3[1],"_to_",input$dates3[2],".csv", sep = "")
+      paste("oli2020_occupation_",input$dates3[1],"_to_",input$dates3[2],".csv", sep = "")
     },
     content = function(file) {
-      write.csv(occupation_select()[,c("date","occupation","share","moving.average")], file, row.names = FALSE, quote = FALSE)
+      write.csv(occupation_select()[,c("date","occupation","moving.average")], file, row.names = FALSE, quote = FALSE)
     }
   )
   
@@ -637,10 +693,10 @@ server <- function(input, output) {
   output$download_country_data <- downloadHandler(
     
     filename = function() {
-      paste("oli_countries_",input$dates4[1],"_to_",input$dates4[2],".csv", sep = "")
+      paste("oli2020_country_",input$dates4[1],"_to_",input$dates4[2],".csv", sep = "")
     },
     content = function(file) {
-      write.csv(country_select()[,c("date","country","share","moving.average")], file, row.names = FALSE, quote = FALSE)
+      write.csv(country_select()[,c("date","country","moving.average")], file, row.names = FALSE, quote = FALSE)
     }
   )
   
@@ -648,18 +704,19 @@ server <- function(input, output) {
   output$download_world_data <- downloadHandler(
     
     filename = function() {
-      paste("oli_world_",input$dates4[1],"_to_",input$dates4[2],".csv", sep = "")
+      "oli2020_world.csv"
     },
     content = function(file) {
       write.csv(world_select()[,c("date","country","share","moving.average")], file, row.names = FALSE, quote = FALSE)
     }
   )
   
+  
   # Downloadable csv of selected dataset
   output$download_cty_occ_data <- downloadHandler(
     
     filename = function() {
-      paste("oli_cty_occ_selected.csv", sep = "")
+      paste("oli2020_country_occupation_selected.csv", sep = "")
     },
     content = function(file) {
       write.csv(cty_occ_select()[,c("country","occupation","share")], file, row.names = FALSE, quote = FALSE)
