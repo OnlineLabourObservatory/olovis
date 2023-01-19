@@ -182,6 +182,22 @@ worker_data$date <- as.Date(as.character(worker_data$timestamp), format = "%Y-%m
 worker_data$occupation[worker_data$occupation == "Software development and technology"] <- 
   "Software dev. and tech."
 
+# Import worker supply data with language feature
+worker_data_language <- read_csv(deposit_details[grepl("worker_country_data_ru_es_",deposit_details$name),"download_url"][1])
+colnames(worker_data_language) <- c("timestamp","country","occupation","num_workers","language")
+worker_data_language$language <- ifelse(worker_data_language$language == "en","English", 
+                                        ifelse(worker_data_language$language == "ru","Russian",
+                                               ifelse(worker_data_language$language == "es","Spanish",NA)))
+#worker_data <- read_csv("worker_countrydata_2021-06-02.txt")
+worker_data_language$timestamp <- as.Date(worker_data_language$timestamp)
+# Transform to monthly data
+worker_data_language$date <- cut(worker_data_language$timestamp, breaks = "weeks")
+worker_data_language <- worker_data_language %>% group_by(date, country, occupation, language) %>% dplyr::summarise(num_workers = sum(num_workers))
+
+# Rename label
+worker_data_language$occupation[worker_data_language$occupation == "Software development and technology"] <- 
+  "Software dev. and tech."
+
 #%#%#%#%#%#%#%#%#%#%#%#%%#%#%#%
 # Calculate static data
 #%#%#%#%#%#%#%#%#%#%#%#%%#%#%#%
@@ -218,26 +234,25 @@ df_gender <- df_gender %>% rowwise() %>% mutate(count = sum(count, n, na.rm = TR
 # Define server logic for random distribution app ----
 server <- function(input, output) {
 
-  worker_occupation_select <- reactive({
-    df <- worker_data %>% filter(as.character(date) >= input$year_occ[1] & as.character(date) <= input$year_occ[2]+1) %>% 
-      group_by(country, occupation) %>% dplyr::summarise(count = sum(num_workers)) %>% group_by(country) %>% 
-      mutate(sum = sum(count)) %>% mutate(share = round(count/sum,2)) 
+    worker_occupation_select <- reactive({
     
-    df <- df %>% filter(count > 10) %>% group_by(country) %>% top_n(1, share) 
-  })
-  
-  worker_share_select <- reactive({
-    df <- worker_data %>% filter(as.character(date) >= input$year_shr[1] & as.character(date) <= input$year_shr[2]+1) %>% 
-      group_by(country, occupation) %>% dplyr::summarise(count = sum(num_workers)) %>% group_by(country) %>% 
-      mutate(sum = sum(count)) %>% mutate(share = round(count/sum,2)) 
-    
-    if (input$occ_select != "All Occupations") {
-      df <- df %>% filter(occupation %in% input$occ_select)
+    if (length(unique(input$language_select)) == 3) {
+      
+      df <- worker_data %>% filter(as.character(date) >= input$year_occ[1] & as.character(date) <= input$year_occ[2]+1) %>% 
+        group_by(country, occupation) %>% dplyr::summarise(count = sum(num_workers)) %>% group_by(country) %>% 
+        mutate(sum = sum(count)) %>% mutate(share = round(count/sum,2)) 
+      
     }
     
-    df <- df %>% group_by(country) %>% dplyr::summarise(count = sum(count,na.rm = T)) %>% filter(count > 10)
-    df <- as.data.frame(df) %>% mutate(share = round(count/sum(count)*100,2))
-  })
+    if (length(unique(input$language_select)) != 3) {
+      
+      df <- worker_data_language %>% filter(as.character(date) >= input$year_occ[1] & as.character(date) <= input$year_occ[2]+1, language %in% input$language_select) %>% 
+        group_by(country, occupation) %>% dplyr::summarise(count = sum(num_workers)) %>% group_by(country) %>% 
+        mutate(sum = sum(count)) %>% mutate(share = round(count/sum,2)) 
+      
+    }
+    
+    df <- df %>% filter(count > 10) %>% group_by(country) %>% top_n(1, share) 
 
   worker_gender_select <- reactive({
     
